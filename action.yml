@@ -1,0 +1,52 @@
+name: 'Tidybot - Automated Code Cleanup'
+description: 'Automatically find and remove dead code based on pragma comments. Free scanning, automated cleanup with Claude AI.'
+author: 'Ephemeral'
+branding:
+  icon: 'trash-2'
+  color: 'purple'
+
+inputs:
+  claude-api-key:
+    description: 'Anthropic API key for automated PR creation (optional - omit for report-only mode)'
+    required: false
+  
+  path:
+    description: 'Path to scan for pragma comments (default: repository root)'
+    required: false
+    default: '.'
+  
+  create-issues:
+    description: 'Create GitHub issues for findings in report-only mode'
+    required: false
+    default: 'true'
+  
+  pr-title-prefix:
+    description: 'Prefix for PR titles when in automation mode'
+    required: false
+    default: '[tidybot]'
+  
+  dry-run:
+    description: 'Run in dry-run mode (no PRs created even with API key)'
+    required: false
+    default: 'false'
+
+outputs:
+  findings-count:
+    description: 'Number of pragma comments found'
+  
+  report-url:
+    description: 'URL to the created issue or PR'
+  
+  mode:
+    description: 'Mode the action ran in (report-only or automated)'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    CLAUDE_API_KEY: ${{ inputs.claude-api-key }}
+    SCAN_PATH: ${{ inputs.path }}
+    CREATE_ISSUES: ${{ inputs.create-issues }}
+    PR_TITLE_PREFIX: ${{ inputs.pr-title-prefix }}
+    DRY_RUN: ${{ inputs.dry-run }}
+    GITHUB_TOKEN: ${{ github.token }}

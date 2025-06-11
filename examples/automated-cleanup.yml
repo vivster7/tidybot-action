@@ -1,0 +1,72 @@
+# Automated Cleanup Mode Example
+# This workflow automatically creates PRs to remove code marked for deletion
+# Requires a Claude API key from Anthropic
+
+name: Tidybot Automated Cleanup
+on:
+  schedule:
+    # Run every Monday at 10 AM UTC
+    - cron: '0 10 * * 1'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  cleanup:
+    name: Automated code cleanup
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Use a PAT or GitHub App token if you want the PR to trigger other workflows
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Run Tidybot with Claude AI
+        uses: ephemeral-dev/tidybot-action@v1
+        id: tidybot
+        with:
+          # Claude API key for automated PR creation
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          
+          # Scan the entire repository
+          path: '.'
+          
+          # Custom prefix for PR titles
+          pr-title-prefix: '[Automated]'
+      
+      - name: Summary
+        run: |
+          echo "### Tidybot Automated Cleanup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Findings**: ${{ steps.tidybot.outputs.findings-count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mode**: ${{ steps.tidybot.outputs.mode }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ steps.tidybot.outputs.report-url }}" ]; then
+            echo "- **Pull Request**: ${{ steps.tidybot.outputs.report-url }}" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      # Optional: Send notification
+      - name: Notify on Slack
+        if: steps.tidybot.outputs.findings-count > 0
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "Tidybot found ${{ steps.tidybot.outputs.findings-count }} pragma comments and created a PR for cleanup",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🤖 *Tidybot Automated Cleanup*\n${{ steps.tidybot.outputs.report-url }}"
+                  }
+                }
+              ]
+            }

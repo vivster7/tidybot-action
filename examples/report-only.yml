@@ -1,0 +1,48 @@
+# Report-Only Mode Example
+# This workflow scans for pragma comments and creates issues with findings
+# No API key required - completely free to use!
+
+name: Tidybot Daily Scan
+on:
+  schedule:
+    # Run every day at 9 AM UTC
+    - cron: '0 9 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan:
+    name: Scan for pragma comments
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Tidybot scan
+        uses: ephemeral-dev/tidybot-action@v1
+        id: tidybot
+        with:
+          # Scan the entire repository
+          path: '.'
+          
+          # Create issues for findings
+          create-issues: true
+          
+          # Custom prefix for issue titles
+          pr-title-prefix: '[Tech Debt]'
+      
+      - name: Summary
+        run: |
+          echo "### Tidybot Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Findings**: ${{ steps.tidybot.outputs.findings-count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mode**: ${{ steps.tidybot.outputs.mode }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ steps.tidybot.outputs.report-url }}" ]; then
+            echo "- **Report**: ${{ steps.tidybot.outputs.report-url }}" >> $GITHUB_STEP_SUMMARY
+          fi

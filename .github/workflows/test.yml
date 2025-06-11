@@ -1,0 +1,62 @@
+name: Test Tidybot Action Locally
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  test-report-only:
+    name: Test Report-Only Mode
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Test tidybot action (report-only)
+        uses: ./
+        id: tidybot-report
+        with:
+          path: "."
+          create-issues: false  # Don't create real issues in testing
+          dry-run: true
+      
+      - name: Validate outputs
+        run: |
+          echo "Testing report-only mode outputs:"
+          echo "Findings count: ${{ steps.tidybot-report.outputs.findings-count }}"
+          echo "Mode: ${{ steps.tidybot-report.outputs.mode }}"
+          echo "Report URL: ${{ steps.tidybot-report.outputs.report-url }}"
+          
+          # Validate mode is correct
+          if [ "${{ steps.tidybot-report.outputs.mode }}" != "report-only" ]; then
+            echo "ERROR: Expected mode 'report-only', got '${{ steps.tidybot-report.outputs.mode }}'"
+            exit 1
+          fi
+
+  test-automated:
+    name: Test Automated Mode
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Test tidybot action (automated)
+        uses: ./
+        id: tidybot-auto
+        with:
+          claude-api-key: "test-key-12345"  # Fake key for testing
+          path: "."
+          dry-run: true  # Don't actually create PRs
+      
+      - name: Validate outputs
+        run: |
+          echo "Testing automated mode outputs:"
+          echo "Findings count: ${{ steps.tidybot-auto.outputs.findings-count }}"
+          echo "Mode: ${{ steps.tidybot-auto.outputs.mode }}"
+          echo "Report URL: ${{ steps.tidybot-auto.outputs.report-url }}"
+          
+          # Validate mode is correct
+          if [ "${{ steps.tidybot-auto.outputs.mode }}" != "automated" ]; then
+            echo "ERROR: Expected mode 'automated', got '${{ steps.tidybot-auto.outputs.mode }}'"
+            exit 1
+          fi

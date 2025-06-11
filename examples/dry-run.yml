@@ -1,0 +1,55 @@
+# Dry Run Mode Example
+# Test what Tidybot would find without creating any issues or PRs
+# Useful for testing in CI or understanding the impact before enabling
+
+name: Tidybot Dry Run
+on:
+  pull_request:
+    branches: [ main, develop ]
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    name: Test pragma comment detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Tidybot in dry-run mode
+        uses: ephemeral-dev/tidybot-action@v1
+        id: tidybot
+        with:
+          # Enable dry-run mode
+          dry-run: true
+          
+          # Even with API key, no PRs will be created
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          
+          # Scan the entire repository
+          path: '.'
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.tidybot.outputs.findings-count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 Tidybot Dry Run Results
+              
+              Found **${{ steps.tidybot.outputs.findings-count }}** pragma comments in this PR that indicate code scheduled for deletion.
+              
+              To see the full report, run Tidybot in report-only mode or check the workflow logs.
+              
+              ---
+              *This is a dry run - no issues or PRs were created.*`
+            })
