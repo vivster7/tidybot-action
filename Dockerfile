@@ -1,17 +1,3 @@
-FROM golang:1.23-alpine AS builder
-
-# Install git for go modules
-RUN apk add --no-cache git
-
-# Copy tidybot source
-WORKDIR /build
-COPY ../go/tidybot/go.mod ../go/tidybot/go.sum ./
-RUN go mod download
-
-COPY ../go/tidybot/ ./
-RUN go build -o tidybot cmd/tidybot/main.go
-
-# Final stage
 FROM alpine:latest
 
 # Install dependencies
@@ -22,8 +8,9 @@ RUN apk add --no-cache \
     jq \
     github-cli
 
-# Copy tidybot binary
-COPY --from=builder /build/tidybot /usr/local/bin/tidybot
+# Copy pre-built tidybot binary
+COPY tidybot /usr/local/bin/tidybot
+RUN chmod +x /usr/local/bin/tidybot
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
