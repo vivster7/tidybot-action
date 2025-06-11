@@ -9,6 +9,11 @@ inputs:
   claude-api-key:
     description: 'Anthropic API key for automated PR creation (optional - omit for report-only mode)'
     required: false
+
+  github-token:
+    description: 'GitHub token for creating issues and PRs'
+    required: false
+    default: ${{ github.token }}
   
   path:
     description: 'Path to scan for pragma comments (default: repository root)'
@@ -49,4 +54,4 @@ runs:
     CREATE_ISSUES: ${{ inputs.create-issues }}
     PR_TITLE_PREFIX: ${{ inputs.pr-title-prefix }}
     DRY_RUN: ${{ inputs.dry-run }}
-    GITHUB_TOKEN: ${{ github.token }}
+    GITHUB_TOKEN: ${{ inputs.github-token }}
