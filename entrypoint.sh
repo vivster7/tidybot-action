@@ -31,6 +31,18 @@ FINDINGS_COUNT=$(echo "$SCAN_OUTPUT" | grep -E ":[0-9]+ " | wc -l | tr -d ' ')
 
 echo "$SCAN_OUTPUT"
 
+# Ensure GITHUB_OUTPUT file exists and is writable
+if [ -z "$GITHUB_OUTPUT" ]; then
+    GITHUB_OUTPUT="/tmp/github_output"
+fi
+touch "$GITHUB_OUTPUT"
+
+# Debug output for troubleshooting
+echo -e "${BLUE}📊 Setting GitHub Action outputs:${NC}"
+echo "  GITHUB_OUTPUT file: $GITHUB_OUTPUT"
+echo "  Findings count: $FINDINGS_COUNT"
+echo "  Mode: $MODE"
+
 # Output findings count
 echo "findings-count=$FINDINGS_COUNT" >> "$GITHUB_OUTPUT"
 echo "mode=$MODE" >> "$GITHUB_OUTPUT"
@@ -51,8 +63,9 @@ git config --global user.email "tidybot@ephemeral.dev"
 git config --global user.name "Tidybot"
 git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-if [ "$MODE" = "report-only" ] && [ "$CREATE_ISSUES" = "true" ] && [ "$DRY_RUN" != "true" ]; then
-    echo -e "${BLUE}📝 Creating issue with findings...${NC}"
+if [ "$MODE" = "report-only" ]; then
+    if [ "$CREATE_ISSUES" = "true" ] && [ "$DRY_RUN" != "true" ]; then
+        echo -e "${BLUE}📝 Creating issue with findings...${NC}"
     
     # Create issue body
     ISSUE_BODY="## 🤖 Tidybot Scan Results
@@ -97,13 +110,18 @@ Get your API key at [console.anthropic.com](https://console.anthropic.com)
         echo "report-url=" >> "$GITHUB_OUTPUT"
     fi
     
-    echo ""
-    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${PURPLE}💡 Want automated cleanup? Add a Claude API key to create PRs automatically!${NC}"
-    echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${PURPLE}💡 Want automated cleanup? Add a Claude API key to create PRs automatically!${NC}"
+        echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    else
+        echo -e "${YELLOW}🔍 Report-only mode (dry run) - no issues created${NC}"
+        echo "report-url=" >> "$GITHUB_OUTPUT"
+    fi
     
-elif [ "$MODE" = "automated" ] && [ "$DRY_RUN" != "true" ]; then
-    echo -e "${BLUE}🤖 Passing findings to Claude for automated cleanup...${NC}"
+elif [ "$MODE" = "automated" ]; then
+    if [ "$DRY_RUN" != "true" ]; then
+        echo -e "${BLUE}🤖 Passing findings to Claude for automated cleanup...${NC}"
     
     # Create branch
     BRANCH_NAME="tidybot/cleanup-$(date +%Y%m%d-%H%M%S)"
@@ -156,15 +174,23 @@ $SCAN_OUTPUT
         --label "tidybot,automated" \
         2>/dev/null || echo "")
     
-    if [ -n "$PR_URL" ]; then
-        echo -e "${GREEN}✅ Created pull request: $PR_URL${NC}"
-        echo "report-url=$PR_URL" >> "$GITHUB_OUTPUT"
+        if [ -n "$PR_URL" ]; then
+            echo -e "${GREEN}✅ Created pull request: $PR_URL${NC}"
+            echo "report-url=$PR_URL" >> "$GITHUB_OUTPUT"
+        else
+            echo -e "${YELLOW}⚠️  Could not create PR (missing permissions?)${NC}"
+            echo "report-url=" >> "$GITHUB_OUTPUT"
+        fi
     else
-        echo -e "${YELLOW}⚠️  Could not create PR (missing permissions?)${NC}"
+        echo -e "${YELLOW}🔍 Automated mode (dry run) - no PRs created${NC}"
         echo "report-url=" >> "$GITHUB_OUTPUT"
     fi
-    
+fi
+
+# Debug: Show final output file contents
+echo -e "${BLUE}📝 Final GitHub Action outputs:${NC}"
+if [ -f "$GITHUB_OUTPUT" ]; then
+    cat "$GITHUB_OUTPUT"
 else
-    echo -e "${YELLOW}🔍 Dry run completed - no issues or PRs created${NC}"
-    echo "report-url=" >> "$GITHUB_OUTPUT"
+    echo "❌ GITHUB_OUTPUT file not found!"
 fi
