@@ -81,7 +81,7 @@ echo "--------------------------------------"
 unset CLAUDE_API_KEY
 if [ -f "./entrypoint.sh" ]; then
     chmod +x ./entrypoint.sh
-    ./entrypoint.sh
+    bash ./entrypoint.sh
 else
     echo "❌ entrypoint.sh not found"
     exit 1
@@ -92,7 +92,7 @@ echo ""
 echo "🤖 Step 4: Testing automated mode (dry run)..."
 echo "----------------------------------------------"
 export CLAUDE_API_KEY="test-key-12345"
-./entrypoint.sh
+bash ./entrypoint.sh
 
 # Check outputs
 echo ""

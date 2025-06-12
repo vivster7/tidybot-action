@@ -51,8 +51,9 @@ runs:
     - name: Setup tidybot
       shell: bash
       run: |
-        # Make the pre-built binary executable
+        # Make the pre-built binary and entrypoint script executable
         chmod +x ${{ github.action_path }}/tidybot
+        chmod +x ${{ github.action_path }}/entrypoint.sh
         
         # Add to PATH for this job
         echo "${{ github.action_path }}" >> $GITHUB_PATH
@@ -79,5 +80,5 @@ runs:
         DRY_RUN: ${{ inputs.dry-run }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        # Source the entrypoint script logic
-        ${{ github.action_path }}/entrypoint.sh
+        # Run the entrypoint script with bash
+        bash "${GITHUB_ACTION_PATH}/entrypoint.sh"
