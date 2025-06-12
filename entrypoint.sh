@@ -27,7 +27,7 @@ fi
 # Run tidybot scan
 echo -e "${BLUE}📂 Scanning ${SCAN_PATH} for pragma comments...${NC}"
 SCAN_OUTPUT=$(tidybot --verbose --path "$SCAN_PATH" 2>&1) || true
-FINDINGS_COUNT=$(echo "$SCAN_OUTPUT" | grep -E ":\d+ " | wc -l | tr -d ' ')
+FINDINGS_COUNT=$(echo "$SCAN_OUTPUT" | grep -E ":[0-9]+ " | wc -l | tr -d ' ')
 
 echo "$SCAN_OUTPUT"
 
