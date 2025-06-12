@@ -3,7 +3,7 @@
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Tidybot-purple)](https://github.com/marketplace/actions/tidybot-automated-code-cleanup)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An open source GitHub Action that finds and removes dead code based on pragma comments in your codebase. Keep your code clean without manual intervention.
+A lightweight GitHub Action that finds and removes dead code based on pragma comments in your codebase. Keep your code clean without manual intervention.
 
 ## ✨ Features
 
@@ -11,6 +11,7 @@ An open source GitHub Action that finds and removes dead code based on pragma co
 - **🤖 Bring Your Own AI**: Use your Claude API key for automated PR creation
 - **📅 Date-Based Deletion**: Remove code when scheduled dates arrive
 - **🎯 Zero Configuration**: Works out of the box with sensible defaults
+- **⚡ Fast Execution**: Composite action runs directly on the runner
 - **📊 Detailed Reports**: Get issues or PRs with comprehensive findings
 - **🆓 100% Open Source**: MIT licensed and free to use
 

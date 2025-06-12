@@ -46,12 +46,38 @@ outputs:
     description: 'Mode the action ran in (report-only or automated)'
 
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  env:
-    CLAUDE_API_KEY: ${{ inputs.claude-api-key }}
-    SCAN_PATH: ${{ inputs.path }}
-    CREATE_ISSUES: ${{ inputs.create-issues }}
-    PR_TITLE_PREFIX: ${{ inputs.pr-title-prefix }}
-    DRY_RUN: ${{ inputs.dry-run }}
-    GITHUB_TOKEN: ${{ inputs.github-token }}
+  using: 'composite'
+  steps:
+    - name: Setup tidybot
+      shell: bash
+      run: |
+        # Make the pre-built binary executable
+        chmod +x ${{ github.action_path }}/tidybot
+        
+        # Add to PATH for this job
+        echo "${{ github.action_path }}" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        # Install GitHub CLI if not available
+        if ! command -v gh &> /dev/null; then
+          echo "Installing GitHub CLI..."
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+        fi
+    
+    - name: Run tidybot scan and process results
+      shell: bash
+      env:
+        CLAUDE_API_KEY: ${{ inputs.claude-api-key }}
+        SCAN_PATH: ${{ inputs.path }}
+        CREATE_ISSUES: ${{ inputs.create-issues }}
+        PR_TITLE_PREFIX: ${{ inputs.pr-title-prefix }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        # Source the entrypoint script logic
+        ${{ github.action_path }}/entrypoint.sh
